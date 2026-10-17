@@ -29,9 +29,14 @@ export DROIDDECK_PERSONAL_KEY_PASSWORD="SENHA_LOCAL"
 ```
 Para compilar, o projeto ainda exige SDK/NDK Android, Java 17, Rust, Docker e os componentes indicados no README original. Nunca inclua chaves no repositório. Após compilar, confira `apksigner verify --verbose --print-certs`, certificado e SHA-256.
 
+## APK experimental pela CI do GitHub
+O workflow `.github/workflows/build.yml` foi adaptado para que **nesta conta** cada execução gere uma chave de assinatura **nova, temporária, não armazenada no repositório**, com certificado distinto do AOSP testkey. O workflow verifica que o certificado final não é o certificado de testes público e publica um artefato quando a compilação termina com sucesso. A cada execução a chave é descartada: o próximo APK **não atualiza** a instalação anterior (a reinstalação pode apagar dados). **Isso não comprova que os componentes Linux, Steam, Proton e downloads são seguros.**
+
+O GitHub Actions pode precisar ser habilitado nas configurações do fork. Os builds podem falhar por dependências de terceiros/limites de execução; não há garantia de APK até a execução efetivamente terminar com sucesso.
+
 ## Avisos
 1. O pacote `com.droiddeck.launcher` foi mantido para não quebrar caminhos internos. Assinaturas privadas não atualizam instalações existentes assinadas com chave AOSP: **não desinstale sem backup**.
-2. A CI herdada do projeto pode gerar APKs de teste usando a chave AOSP. **Não instale artefatos Actions como versão pessoal verificada.** É preciso concluir a adaptação da pipeline para assinar com uma chave privada.
+2. A CI modificada assina APKs experimentais deste fork com uma chave temporária por execução, em vez do certificado público AOSP. **Isso só protege a identidade da assinatura contra falsificações triviais pelo certificado de testes; não equivale a auditoria de malware ou validação da cadeia de downloads.**
 3. O fork foi criado a partir da branch `dev`, cujo README ainda declara GPUs **Xclipse não suportadas**. Compatibilidade Exynos 2400/Xclipse 940 ainda não foi implementada ou testada.
 4. Não entre com a conta Steam principal enquanto código, downloads e autenticação não tiverem sido revisados e testados num aparelho de teste.
 
