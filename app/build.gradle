@@ -71,6 +71,17 @@ def variantSuffixes = rootProject.file('tools/release/variants.txt').readLines()
     .collect { def f = it.trim().split(/\s+/); "${f[1]}=${f[2] == '-' ? '' : f[2]}" }
     .join(';')
 
+
+// Personal signing uses keys supplied at build time; never commit them to Git.
+// Debug builds may still use the upstream AOSP test key, but release builds may not.
+def personalSigningRequired = [
+    'DROIDDECK_PERSONAL_KEYSTORE',
+    'DROIDDECK_PERSONAL_STORE_PASSWORD',
+    'DROIDDECK_PERSONAL_KEY_ALIAS',
+    'DROIDDECK_PERSONAL_KEY_PASSWORD'
+]
+def personalSigningReady = personalSigningRequired.every { System.getenv(it)?.trim() }
+
 android {
     namespace 'com.droiddeck.launcher'
     compileSdk 34
@@ -132,6 +143,19 @@ android {
             enableV2Signing = true
             enableV3Signing = true
         }
+        personalRelease {
+            // Release builds MUST use a user-owned private PKCS12 key.
+            if (personalSigningReady) {
+                storeFile file(System.getenv('DROIDDECK_PERSONAL_KEYSTORE'))
+                storeType "PKCS12"
+                storePassword System.getenv('DROIDDECK_PERSONAL_STORE_PASSWORD')
+                keyAlias System.getenv('DROIDDECK_PERSONAL_KEY_ALIAS')
+                keyPassword System.getenv('DROIDDECK_PERSONAL_KEY_PASSWORD')
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
     }
 
     buildTypes {
@@ -141,7 +165,10 @@ android {
         }
         release {
             minifyEnabled false
-            signingConfig signingConfigs.testkey
+            // Never distribute an APK signed with the publicly known AOSP test key.
+            if (personalSigningReady) {
+                signingConfig signingConfigs.personalRelease
+            }
         }
         configureEach {
             // CI supplies the PR head SHA even when building its merge with main.
@@ -307,4 +334,19 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.16.1'
+}
+
+    
+// Fail before packaging an installable release with no private signing key.
+// Debug unit tests and Gradle sync do not require secrets.
+tasks.matching { it.name in ['packageRelease', 'bundleRelease'] }.configureEach {
+    doFirst {
+        if (!personalSigningReady) {
+            throw new GradleException(
+                'Personal release signing required: provide DROIDDECK_PERSONAL_KEYSTORE, ' +
+                'DROIDDECK_PERSONAL_STORE_PASSWORD, DROIDDECK_PERSONAL_KEY_ALIAS, ' +
+                'DROIDDECK_PERSONAL_KEY_PASSWORD. Do not use the public test key.'
+            )
+        }
+    }
 }
