@@ -15,21 +15,18 @@
          download from being throttled to nothing by the radio's power-save. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- Optional Wi-Fi discovery: requested only from Steam settings after an explanation. -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Personal hardened build: no location access. Wi-Fi discovery requiring
+         location permission is intentionally unavailable. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Ends background processes of another app that holds the Steam login. GameHub starts
          itself with the phone via boot receivers and signs this client out seconds after every
          login; a normal permission, and it cannot touch anything in the foreground. -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
-    <!-- The microphone for the Linux session, only when the user turns it on: the DirectAudio
-         relay helper opens the input stream under this uid, and PulseAudio exposes it to the
-         Steam client as DirectAudioMic. -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <!-- Installs DroidDeck's own updates (Updates page) over itself, after the user allows it. -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Personal hardened build: microphone permission disabled until the audio
+         capture path is reviewed. Voice chat/microphone input will not work. -->
+    <!-- Personal hardened build: no install-other-packages permission.
+         Official in-app APK updates will not work in this profile. -->
 
     <uses-feature android:name="android.hardware.vulkan.version" android:version="0x401000" android:required="true" />
     <uses-feature android:name="android.hardware.gamepad" android:required="false" />
